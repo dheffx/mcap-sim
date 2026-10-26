@@ -41,6 +41,8 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
   const [copyStatus, setCopyStatus] = useState('');
   const [copyError, setCopyError] = useState('');
   const heading = useRef<HTMLHeadingElement>(null);
+  const questionCard = useRef<HTMLElement>(null);
+  const questionHeading = useRef<HTMLHeadingElement>(null);
   const item = test.items[progress.currentIndex]!;
   const answer = progress.answers[item.id] ?? '';
   const answered = test.items.filter(entry => (progress.answers[entry.id] ?? '').trim() !== '').length;
@@ -61,8 +63,13 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
   const assessment = assessments.find(entry => entry.id === assessmentId)!;
 
   useEffect(() => {
-    heading.current?.focus({ preventScroll: true });
-    window.scrollTo({ top: 0 });
+    if (!ready && view === 'question') {
+      questionHeading.current?.focus({ preventScroll: true });
+      questionCard.current?.scrollIntoView({ block: 'start' });
+    } else {
+      heading.current?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0 });
+    }
   }, [progress.currentIndex, view, ready]);
 
   useEffect(() => {
@@ -178,9 +185,9 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
     </> : <>
       {expired && <p className="time-up-notice" role="status">Time is up. Your timed score is fixed. You can keep answering for practice; questions unanswered at the time limit stay in that category.</p>}
       <div className="test-layout">
-        <section className="question-card" aria-label={`Question ${progress.currentIndex + 1}`}>
+        <section key={item.id} ref={questionCard} className="question-card" aria-label={`Question ${progress.currentIndex + 1}`}>
           <div className="question-topline"><span className="question-number">Question {progress.currentIndex + 1} of {test.items.length}</span><span className="skill-tag">{category.short}</span>{progress.submitted && <button className="text-button" onClick={() => setView('results')}>Back to results</button>}</div>
-          <h2 className="question-prompt">{item.prompt}</h2>
+          <h2 ref={questionHeading} tabIndex={-1} className="question-prompt">{item.prompt}</h2>
           {item.math && <MathText value={item.math} block />}
           {item.figure && <Figure figure={item.figure} />}
           <div className="answer-area">

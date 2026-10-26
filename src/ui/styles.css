@@ -82,7 +82,12 @@ input::placeholder { color: #72777c; font-weight: 400; font-size: 13px; }
 .setup-panel { padding: 15px 18px; margin-bottom: 20px; background: #f0f5fe; border-color: #d4e0f5; }
 .setup-panel .input-hint { font-size: 11px; }
 .test-layout { display: grid; grid-template-columns: minmax(0, 1fr) 235px; gap: 20px; align-items: start; }
-.question-card { padding: 24px; }
+.question-card { padding: 24px; min-height: calc(100svh - 32px); scroll-margin-top: 16px; animation: question-enter 260ms ease-out; }
+@keyframes question-enter {
+  from { opacity: .65; border-color: #8da9e0; box-shadow: 0 0 0 2px #285bcc14; }
+  to { opacity: 1; border-color: var(--line); box-shadow: 0 0 0 0 transparent; }
+}
+.question-prompt:focus { outline: none; }
 .question-topline { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .question-number { font-size: 12px; font-weight: 600; color: #315a9a; }
 .skill-tag { font-size: 12px; color: #4d6388; background: #eef3fb; border-radius: 3px; padding: 3px 8px; }
@@ -234,10 +239,12 @@ progress::-moz-progress-bar { background: #5e83cd; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
+  .question-card { animation: none; }
 }
 @media print {
   .site-header, .setup-panel, .question-sidebar, .question-navigation, .question-footer, .share-tools, .results-actions, .runner-disclaimer, .timer { display: none; }
   .wrap { width: 100%; }
   .test-layout, .results-layout { display: block; }
   .question-card, .panel { break-inside: avoid; margin-bottom: 20px; }
+  .question-card { min-height: 0; animation: none; }
 }
