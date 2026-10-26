@@ -1,16 +1,22 @@
-import { grade5 } from '../src/engine/blueprint/g5';
-import { templates } from '../src/engine/templates/g5';
+import { assessments } from '../src/engine/assessments';
+import { allTemplates } from '../src/engine/templates';
 
-console.log('Grade 5 practice coverage (not a claim of complete official standards coverage)\n');
-console.table(grade5.categories.flatMap(category => {
-  const standards = [...new Set(templates.filter(template => template.category === category.id).map(template => template.standard))];
-  return standards.map(standard => ({
-    domain: category.short,
-    standard,
-    templates: templates.filter(template => template.standard === standard).length,
+for (const assessment of assessments) {
+  const blueprint = assessment.blueprint!;
+  const templates = allTemplates.filter(template => blueprint.slots.includes(template.id));
+  console.log(`\n${blueprint.title} (not a claim of complete official standards coverage)\n`);
+  const missing = blueprint.slots.filter(slot => !templates.some(template => template.id === slot));
+  if (missing.length) throw new Error(`Blueprint slots missing templates: ${missing.join(', ')}`);
+  console.table(blueprint.categories.flatMap(category => {
+    const inCategory = templates.filter(template => (blueprint.categoryOverrides?.[template.id] ?? template.category) === category.id);
+    const standards = [...new Set(inCategory.map(template => template.standard))];
+    return standards.map(standard => ({
+      category: category.short,
+      standard,
+      templates: inCategory.filter(template => template.standard === standard).length,
+    }));
   }));
-}));
-const missing = grade5.slots.filter(slot => !templates.some(template => template.id === slot));
-if (missing.length) throw new Error(`Blueprint slots missing templates: ${missing.join(', ')}`);
-console.log(`${templates.length} templates; ${grade5.slots.length} distinct slots; ${grade5.totalPoints} points.`);
-console.log(grade5.provenance.note);
+  console.log(`${templates.length} templates; ${blueprint.slots.length} slots; ${blueprint.totalPoints} points.`);
+  console.log(blueprint.provenance.note);
+}
+console.log(`\n${allTemplates.length} unique templates across ${assessments.length} practice forms.`);

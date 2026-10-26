@@ -1,7 +1,7 @@
 import type { Rng } from './rng';
 import type { Fraction } from './fraction';
 
-export type Category = 'nbt' | 'nf' | 'oa' | 'md' | 'g';
+export type Category = 'nbt' | 'nf' | 'oa' | 'md' | 'g' | 'ns' | 'ee' | 'f' | 'sp' | 'nq' | 'a' | 's' | 'content' | 'modeling' | 'reasoning';
 export type ItemType = 'mc' | 'numeric';
 export type Difficulty = 1 | 2 | 3;
 
@@ -18,18 +18,60 @@ export type ProblemData =
   | { kind: 'conversion'; quantity: number; factor: number }
   | { kind: 'plot'; counts: number[]; denominator: number }
   | { kind: 'coordinate'; x: number; y: number }
-  | { kind: 'shape'; equalSides: number; rightAngles: number };
+  | { kind: 'shape'; equalSides: number; rightAngles: number }
+  | { kind: 'root'; radicand: number; degree: 2 | 3; power: number }
+  | { kind: 'repeating'; digit: number }
+  | { kind: 'exponentSum'; a: number; b: number }
+  | { kind: 'scientific'; coefficient: number; places: number; exponent: number }
+  | { kind: 'linearEquation'; a: number; b: number; c: number }
+  | { kind: 'distributedEquation'; a: number; b: number; c: number; d: number }
+  | { kind: 'slope'; x1: number; y1: number; x2: number; y2: number }
+  | { kind: 'system'; a: number; b: number; c: number; d: number; e: number; f: number; variable: 'x' | 'y' }
+  | { kind: 'linearValue'; slope: number; intercept: number; input: number }
+  | { kind: 'rateDifference'; first: number; second: number }
+  | { kind: 'pythagorean'; a: number; b: number }
+  | { kind: 'distance'; x1: number; y1: number; x2: number; y2: number }
+  | { kind: 'dilation'; x: number; factor: number }
+  | { kind: 'triangleAngle'; a: number; b: number }
+  | { kind: 'cylinder'; radius: number; height: number }
+  | { kind: 'association'; points: readonly (readonly [number, number])[] }
+  | { kind: 'conditionalRate'; successes: number; other: number }
+  | { kind: 'polynomialSum'; left: number[]; right: number[]; degree: number }
+  | { kind: 'polynomialProduct'; p: number; q: number }
+  | { kind: 'factorization'; sum: number; product: number }
+  | { kind: 'quadratic'; a: number; b: number; c: number }
+  | { kind: 'inequality'; a: number; b: number; c: number }
+  | { kind: 'trapezoidHeight'; area: number; firstBase: number; secondBase: number }
+  | { kind: 'polynomialValue'; coefficients: number[]; input: number }
+  | { kind: 'averageRate'; coefficients: number[]; first: number; second: number }
+  | { kind: 'exponential'; initial: number; factor: number; periods: number }
+  | { kind: 'vertex'; a: number; h: number; k: number }
+  | { kind: 'xIntercept'; slope: number; intercept: number }
+  | { kind: 'mean'; values: number[] }
+  | { kind: 'median'; values: number[] }
+  | { kind: 'gardenArea'; length: number; widthNumerator: number; widthDenominator: number }
+  | { kind: 'purchase'; units: number; priceCents: number; feeCents: number }
+  | { kind: 'trips'; people: number; capacity: number }
+  | { kind: 'combinedVolume'; first: readonly [number, number, number]; second: readonly [number, number, number] }
+  | { kind: 'placeRatio'; power: number }
+  | { kind: 'fractionMistake'; a: number; b: number; c: number; d: number }
+  | { kind: 'fractionScale'; numerator: number; denominator: number };
 
 export type Figure =
   | { kind: 'box'; length: number; width: number; height: number | null }
   | { kind: 'coordinate'; x: number; y: number }
-  | { kind: 'plot'; counts: number[]; denominator: number };
+  | { kind: 'plot'; counts: number[]; denominator: number }
+  | { kind: 'graph'; points: readonly (readonly [number, number])[]; connect: boolean };
 
-export interface Choice {
-  id: string;
+export interface ChoiceDraft {
   value: string;
   label: string;
   misconception: string | null;
+  text?: boolean;
+}
+
+export interface Choice extends ChoiceDraft {
+  id: string;
 }
 
 export interface Item {
@@ -56,9 +98,10 @@ export interface Draft {
   unit?: string;
   figure?: Figure;
   data: ProblemData;
-  answer: Fraction | 'square';
+  answer: Fraction | string;
   solution: string;
   distractors?: { value: Fraction; misconception: string }[];
+  choices?: ChoiceDraft[];
 }
 
 export interface Template {
@@ -80,6 +123,8 @@ export interface Blueprint {
   difficultyCounts: Record<Difficulty, number>;
   totalPoints: number;
   slots: readonly string[];
+  categoryOverrides?: Readonly<Record<string, Category>>;
+  allowNegativeChoices?: boolean;
 }
 
 export interface Assessment {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { answerLabel, distribution, isCorrect } from '../engine/assemble';
+import { assessments } from '../engine/assessments';
 import { Fraction } from '../engine/fraction';
 import type { GeneratedTest, Item } from '../engine/types';
 import { beginAttempt, expireAttempt, finishAttempt, formatTime, recordAnswer, remainingSeconds } from './attempt';
@@ -12,7 +13,8 @@ import { useProgress } from './storage';
 
 function KeyValue({ item }: { item: Item }) {
   const label = answerLabel(item);
-  return item.data.kind === 'shape' ? <>{label}</> : <MathText value={label.includes('/') && item.type === 'numeric' ? `\\frac{${label.split('/')[0]}}{${label.split('/')[1]}}` : label} />;
+  const text = item.data.kind === 'shape' || item.choices?.find(choice => choice.value === item.key)?.text;
+  return text ? <>{label}</> : <MathText value={label.includes('/') && item.type === 'numeric' ? `\\frac{${label.split('/')[0]}}{${label.split('/')[1]}}` : label} />;
 }
 
 function Confirmation({ title, children, onCancel, onConfirm, confirmLabel, cancelLabel = 'Cancel' }: {
@@ -55,6 +57,8 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
   const showFeedback = progress.submitted || (expired && progress.acknowledgedExpiry && answer.trim() !== '');
   const invalidNumeric = item.type === 'numeric' && answer.trim() !== '' && Fraction.parse(answer) === null;
   const seconds = remainingSeconds(progress, now);
+  const assessmentId = test.code.split('.')[1]!;
+  const assessment = assessments.find(entry => entry.id === assessmentId)!;
 
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
@@ -120,7 +124,7 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
     {storageError && <div className="error-message" role="alert">{storageError} {blocked && <button className="text-button" onClick={() => setConfirm('reset')}>Reset saved progress</button>}</div>}
     {copyError && <p className="error-message" role="alert">{copyError}</p>}
     <div className="runner-heading">
-      <h1 ref={heading} tabIndex={-1}>{ready ? 'Test ready' : view === 'results' ? 'Results' : progress.submitted ? 'Review' : 'Grade 5 math'}</h1>
+      <h1 ref={heading} tabIndex={-1}>{ready ? 'Test ready' : view === 'results' ? `${assessment.title} results` : progress.submitted ? `${assessment.title} review` : assessment.title}</h1>
       {progress.startedAt !== null && <div className={`timer ${expired ? 'expired' : seconds <= 60 && running ? 'low-time' : ''}`} role="timer" aria-live="off" aria-label={`Time remaining: ${formatTime(seconds)}`}>
         <span>{expired ? 'Time is up' : progress.submitted ? 'Time remaining at submission' : 'Time remaining'}</span>
         <strong>{formatTime(seconds)}</strong>
@@ -133,8 +137,8 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
       <span className="copy-status" role="status">{copyStatus}</span>
     </div>
     <section className="panel setup-panel" aria-label="Test controls">
-      <TestSetup initialSeed={test.seed} durationMs={progress.durationMs} onPrepare={onPrepare} onStart={ready ? start : undefined} active={!ready} />
-      {ready && <p className="ready-details">20 questions · 1 point each · no calculator. Start test begins the timer and reveals question 1.{answered > 0 && ` ${answered} saved answers will be retained.`}</p>}
+      <TestSetup initialSeed={test.seed} initialAssessmentId={assessmentId} durationMs={progress.durationMs} onPrepare={onPrepare} onStart={ready ? start : undefined} active={!ready} />
+      {ready && <p className="ready-details">{test.items.length} questions · {test.blueprint.totalPoints} points · no calculator. Start test begins the timer and reveals question 1.{answered > 0 && ` ${answered} saved answers will be retained.`}</p>}
     </section>
 
     {!ready && (view === 'results' ? <>
@@ -183,7 +187,7 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
             {item.type === 'mc' ? <fieldset className="choices" disabled={progress.submitted}><legend className="sr-only">Choose one answer</legend>
               {item.choices!.map(choice => <label className={`choice ${answer === choice.id ? 'chosen' : ''} ${showFeedback && choice.value === item.key ? 'choice-correct' : ''} ${showFeedback && answer === choice.id && choice.value !== item.key ? 'choice-wrong' : ''}`} key={choice.id}>
                 <input type="radio" name={item.id} checked={answer === choice.id} value={choice.id} onChange={() => setProgress(previous => recordAnswer(previous, item.id, choice.id, Date.now()))} />
-                <span className="choice-letter">{choice.id}</span><span>{item.data.kind === 'shape' ? choice.label : <MathText value={choice.label} />}</span>
+                <span className="choice-letter">{choice.id}</span><span>{item.data.kind === 'shape' || choice.text ? choice.label : <MathText value={choice.label} />}</span>
                 {showFeedback && choice.value === item.key && <Icon name="check" />}
               </label>)}
             </fieldset> : <div className="numeric-entry">
@@ -229,7 +233,7 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
       </div>
     </> )}
     {new URLSearchParams(window.location.search).has('debug') && <details className="debug-panel"><summary>Assembly report</summary><pre>{JSON.stringify(distribution(test), null, 2)}</pre></details>}
-    <p className="runner-disclaimer">Independent practice, not an official MCAP exam or score.</p>
+    <details className="runner-disclaimer"><summary>Practice form details</summary><p>{test.blueprint.provenance.note} <a href={test.blueprint.provenance.sourceUrl} target="_blank" rel="noreferrer">MSDE reference</a></p></details>
     {showExpiry ? <Confirmation title="Time is up" cancelLabel="Keep working" confirmLabel="Quit & see results" onCancel={keepWorking} onConfirm={finish}>
       <p>The timed score is saved. {unanswered} questions were unanswered at the time limit and count as zero points.</p>
       <p>Keep working to check more answers for practice. Your timed score and unanswered-at-time-limit count will not change.</p>

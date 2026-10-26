@@ -1,5 +1,5 @@
 import { decimal, Fraction, latex } from '../fraction';
-import type { Draft, Template } from '../types';
+import type { ChoiceDraft, Draft, Template } from '../types';
 import type { Rng } from '../rng';
 
 const f = (n: number, d = 1) => new Fraction(n, d);
@@ -242,7 +242,8 @@ export const templates: readonly Template[] = [
   },
 ];
 
-export function numericChoices(draft: Draft, rng: Rng): { value: string; label: string; misconception: string | null }[] {
+export function numericChoices(draft: Draft, rng: Rng, allowNegative = false): ChoiceDraft[] {
+  if (draft.choices) return rng.shuffle(draft.choices);
   if (draft.answer === 'square') {
     return rng.shuffle([
       { value: 'square', label: 'Square', misconception: null },
@@ -251,6 +252,7 @@ export function numericChoices(draft: Draft, rng: Rng): { value: string; label: 
       { value: 'triangle', label: 'Triangle', misconception: 'A triangle has three sides. The shape in the question has four sides.' },
     ]);
   }
+  if (typeof draft.answer === 'string') throw new Error('A symbolic answer requires explicit choices.');
   const answer = draft.answer;
   const options: { value: string; label: string; misconception: string | null }[] = [
     { value: answer.toString(), label: latex(answer), misconception: null },
@@ -263,7 +265,7 @@ export function numericChoices(draft: Draft, rng: Rng): { value: string; label: 
     })),
   ];
   for (const candidate of candidates) {
-    if (candidate.value.n < 0n) continue;
+    if (!allowNegative && candidate.value.n < 0n) continue;
     if (options.some(option => option.value === candidate.value.toString())) continue;
     options.push({ value: candidate.value.toString(), label: latex(candidate.value), misconception: candidate.misconception });
     if (options.length === 4) break;

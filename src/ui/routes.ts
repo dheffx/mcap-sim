@@ -1,4 +1,8 @@
-import { generateTest } from '../engine/assemble';
+import { generateTest, makeCode } from '../engine/assemble';
+
+export function resolveTestInput(input: string, assessmentId: string): string {
+  return input.includes('.') ? generateTest(input.trim()).code : makeCode(input, assessmentId);
+}
 
 export function testHref(code: string): string {
   return `#/t/${encodeURIComponent(code)}`;

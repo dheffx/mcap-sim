@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { generateTest, makeCode } from '../engine/assemble';
-import { assessments } from '../engine/blueprint/g5';
+import { makeCode } from '../engine/assemble';
+import { assessments } from '../engine/assessments';
 import { DEFAULT_DURATION_MS, durationFromMinutes } from './attempt';
 import { Icon } from './components';
+import { resolveTestInput } from './routes';
 
 export type PrepareTest = (code: string, durationMs: number, start?: boolean) => void;
 
@@ -12,15 +13,16 @@ export function randomSeed(): string {
   return Array.from(values, value => alphabet[value % alphabet.length]).join('');
 }
 
-export function TestSetup({ initialSeed = '', durationMs = DEFAULT_DURATION_MS, onPrepare, onStart, showAssessment = false, active = false }: {
+export function TestSetup({ initialSeed = '', initialAssessmentId = 'g5', durationMs = DEFAULT_DURATION_MS, onPrepare, onStart, active = false }: {
   initialSeed?: string;
+  initialAssessmentId?: string;
   durationMs?: number;
   onPrepare: PrepareTest;
   onStart?: (code: string, durationMs: number) => void;
-  showAssessment?: boolean;
   active?: boolean;
 }) {
   const [seed, setSeed] = useState(initialSeed);
+  const [assessmentId, setAssessmentId] = useState(initialAssessmentId);
   const [minutes, setMinutes] = useState(String(durationMs / 60000));
   const [error, setError] = useState('');
 
@@ -28,8 +30,8 @@ export function TestSetup({ initialSeed = '', durationMs = DEFAULT_DURATION_MS, 
     try {
       const duration = durationFromMinutes(minutes);
       const code = mode === 'random' || !seed.trim()
-        ? makeCode(randomSeed())
-        : seed.includes('.') ? generateTest(seed.trim()).code : makeCode(seed);
+        ? makeCode(randomSeed(), assessmentId)
+        : resolveTestInput(seed, assessmentId);
       setError('');
       if (mode === 'start' && onStart) onStart(code, duration);
       else onPrepare(code, duration);
@@ -40,10 +42,20 @@ export function TestSetup({ initialSeed = '', durationMs = DEFAULT_DURATION_MS, 
 
   return <div className="test-setup">
     <form className="setup-form" onSubmit={event => { event.preventDefault(); submit('seed'); }}>
-      {showAssessment && <label className="assessment-select">Assessment<select defaultValue="g5">
+      <label className="assessment-select">Assessment<select name="assessment" value={assessmentId} onChange={event => {
+        setAssessmentId(event.target.value);
+        if (seed.includes('.')) setSeed(seed.split('.')[0]!);
+        setError('');
+      }}>
         {assessments.map(assessment => <option key={assessment.id} value={assessment.id} disabled={assessment.status !== 'available'}>{assessment.title} — {assessment.subtitle}</option>)}
-      </select></label>}
-      <label className="seed-field">Seed or test code<input name="seed" value={seed} maxLength={65} autoCapitalize="characters" spellCheck={false} placeholder="Enter a seed, or generate a random test" onChange={event => { setSeed(event.target.value); setError(''); }} /></label>
+      </select></label>
+      <label className="seed-field">Seed or test code<input name="seed" value={seed} maxLength={65} autoCapitalize="characters" spellCheck={false} placeholder="Enter a seed, or generate a random test" onChange={event => {
+        const value = event.target.value;
+        setSeed(value);
+        const parts = value.trim().split('.');
+        if (parts.length === 4 && assessments.some(assessment => assessment.id === parts[1])) setAssessmentId(parts[1]!);
+        setError('');
+      }} /></label>
       <label className="duration-field">Minutes<input name="minutes" type="number" min="1" step="1" value={minutes} onChange={event => { setMinutes(event.target.value); setError(''); }} /></label>
       <div className="setup-actions">
         <button className="button secondary" type="submit" disabled={!seed.trim()}>Use seed</button>

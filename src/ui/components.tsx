@@ -58,6 +58,27 @@ export function Figure({ figure }: { figure: FigureSpec }) {
       </svg>
     </figure>;
   }
+  if (figure.kind === 'graph') {
+    const x = (value: number) => 30 + (value + 6) * 20;
+    const y = (value: number) => 30 + (8 - value) * 20;
+    const [first, second] = figure.points;
+    return <figure className="figure">
+      <svg viewBox="0 0 350 350" role="img" aria-label={`${figure.connect ? 'Line through' : 'Scatter plot of'} points ${figure.points.map(([a, b]) => `(${a}, ${b})`).join(', ')}. Both axes run from -6 to 8.`}>
+        {Array.from({ length: 15 }, (_, i) => i - 6).map(value => <g key={value}>
+          <path d={`M${x(value)} 30V310M30 ${y(value)}H310`} stroke="#e1e5eb" />
+          {value !== 0 && value % 2 === 0 && <>
+            <text x={x(value)} y={y(0) + 18} textAnchor="middle" fontSize="10">{value}</text>
+            <text x={x(0) - 10} y={y(value) + 4} textAnchor="end" fontSize="10">{value}</text>
+          </>}
+        </g>)}
+        <path d={`M${x(0)} 24V316M24 ${y(0)}H316`} stroke="#475569" strokeWidth="1.5" />
+        <text x="325" y={y(0) + 4}>x</text><text x={x(0) + 7} y="20">y</text>
+        <text x={x(0) - 7} y={y(0) + 17} textAnchor="end" fontSize="10">0</text>
+        {figure.connect && first && second && <path d={`M${x(first[0])} ${y(first[1])}L${x(second[0])} ${y(second[1])}`} stroke="#285bcc" strokeWidth="2" />}
+        {figure.points.map(([a, b], i) => <circle key={i} cx={x(a)} cy={y(b)} r="4.5" fill="#285bcc" />)}
+      </svg>
+    </figure>;
+  }
   return <figure className="figure">
     <svg viewBox="0 0 380 205" role="img" aria-label={`Ribbon lengths in meters. ${figure.counts.map((count, i) => `${count} ribbons of length ${i + 1}/${figure.denominator}`).join('; ')}.`}>
       <path d="M35 140h310" stroke="#475569" strokeWidth="2" />

@@ -1,12 +1,16 @@
 import { generateTest, makeCode } from '../src/engine/assemble';
 import { Fraction } from '../src/engine/fraction';
 import { isCorrect } from '../src/engine/assemble';
+import { assessments } from '../src/engine/assessments';
 
 const count = Number(process.argv[2] ?? 10000);
 if (!Number.isSafeInteger(count) || count < 1 || count > 1000000) throw new Error('Provide a seed count from 1 to 1,000,000.');
 
-for (let seed = 0; seed < count; seed++) {
-  const test = generateTest(makeCode(`FUZZ-${seed}`));
+let tests = 0, items = 0;
+for (let seed = 0; seed < count; seed++) for (const assessment of assessments) {
+  const test = generateTest(makeCode(`FUZZ-${seed}`, assessment.id));
+  tests++;
+  items += test.items.length;
   for (const item of test.items) {
     const response = item.type === 'mc' ? item.choices!.find(choice => choice.value === item.key)!.id : item.key;
     if (!isCorrect(item, response)) throw new Error(`Grading rejected the key for ${test.code}/${item.id}.`);
@@ -18,4 +22,4 @@ for (let seed = 0; seed < count; seed++) {
     }
   }
 }
-console.log(`Verified ${count.toLocaleString('en-US')} tests / ${(count * 20).toLocaleString('en-US')} original items: keys, grading, unique options, exact practice quotas.`);
+console.log(`Verified ${tests.toLocaleString('en-US')} tests / ${items.toLocaleString('en-US')} original items across ${assessments.length} assessments: keys, grading, unique options, exact practice quotas.`);

@@ -1,7 +1,8 @@
-import { assessments } from './blueprint/g5';
+import { assessments } from './assessments';
 import { Fraction } from './fraction';
 import { slotRng } from './rng';
-import { numericChoices, templates } from './templates/g5';
+import { numericChoices } from './templates/g5';
+import { allTemplates } from './templates';
 import type { GeneratedTest, Item } from './types';
 import { verifyItem } from './verify';
 
@@ -30,19 +31,20 @@ export function generateTest(code: string): GeneratedTest {
   if (blueprintId !== blueprint.id) throw new Error(`Blueprint "${blueprintId}" is not supported. Choose a new practice test from the home page.`);
   const canonicalCode = makeCode(seed!, assessment.id);
   const items: Item[] = blueprint.slots.map((templateId, index) => {
-    const template = templates.find(entry => entry.id === templateId);
+    const template = allTemplates.find(entry => entry.id === templateId);
     if (!template) throw new Error(`Missing template: ${templateId}`);
     const draft = template.generate(slotRng(canonicalCode, index));
     const choices = template.type === 'mc'
-      ? numericChoices(draft, slotRng(canonicalCode, index, 'options')).map((choice, i) => ({ ...choice, id: String.fromCharCode(65 + i) }))
+      ? numericChoices(draft, slotRng(canonicalCode, index, 'options'), blueprint.allowNegativeChoices).map((choice, i) => ({ ...choice, id: String.fromCharCode(65 + i) }))
       : undefined;
-    const { answer, distractors: _distractors, ...content } = draft;
+    const { answer, distractors: _distractors, choices: _choices, ...content } = draft;
     void _distractors;
+    void _choices;
     const item: Item = {
       ...content,
       id: `q${index + 1}`,
       templateId: template.id,
-      category: template.category,
+      category: blueprint.categoryOverrides?.[template.id] ?? template.category,
       standard: template.standard,
       difficulty: template.difficulty,
       type: template.type,

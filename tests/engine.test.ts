@@ -27,7 +27,7 @@ describe('versioned codes and reproducibility', () => {
 
   it.each([
     'BAYTRAIL', 'BAYTRAIL.g5.p1.v0', 'BAYTRAIL.g5.b2022.v1',
-    'BAYTRAIL.g8.p1.v1', 'BAYTRAIL.alg1.p1.v1', 'BAYTRAIL.g5.p1.v1.extra',
+    'BAYTRAIL.g6.p1.v1', 'BAYTRAIL.alg2.p1.v1', 'BAYTRAIL.g5.p1.v1.extra',
   ])('does not silently regenerate unsupported code %s', code => {
     expect(() => generateTest(code)).toThrow();
   });

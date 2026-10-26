@@ -4,7 +4,7 @@ The app is a deterministic template engine, not an AI generating questions or gr
 
 ## 1. Questions come from programmed templates
 
-The templates live in [`src/engine/templates/g5.ts`](src/engine/templates/g5.ts). Each template defines:
+The templates live in [`src/engine/templates/`](src/engine/templates/), grouped into Grade 5, Grade 8, MSTAR, and Algebra I modules and combined in [`index.ts`](src/engine/templates/index.ts). Each template defines:
 
 - The skill and standard it covers.
 - Allowed number ranges.
@@ -25,7 +25,9 @@ solution = `Multiply ${boxes} by ${pencilsPerBox}...`;
 
 For division, some problems are constructed backward: choose the divisor and desired whole-number answer first, then multiply them to produce the dividend. This guarantees a clean division problem instead of hoping random numbers divide evenly.
 
-**Current limitation:** there are 20 templates, and every test uses those same problem types in the same order. New seeds primarily vary numbers, some context, and answer-choice positions, not entirely new question structures.
+There are **70 unique templates**: 20 legacy Grade 5, 20 Grade 8, 20 Algebra I, and 10 additional MSTAR modeling/reasoning templates. The MSTAR form reuses 10 Grade 5 content templates and remaps their reporting categories to content.
+
+**Current limitation:** each assessment uses 20 fixed template slots in the same order. New seeds primarily vary numbers, some context, and answer-choice positions, not entirely new question structures.
 
 ## 2. The seed makes the randomness repeatable
 
@@ -48,9 +50,13 @@ pins four things:
 
 Each question gets its own random stream, derived from the code and its question index. Answer choices use another stream. Generating more random values for question 1 therefore does not shift the numbers used for question 2.
 
-[`src/engine/blueprint/g5.ts`](src/engine/blueprint/g5.ts) defines the fixed question slots and distribution. [`src/engine/assemble.ts`](src/engine/assemble.ts) fills those slots and verifies the resulting counts. These are app-defined practice quotas, not verified official MCAP quotas.
+[`src/engine/assessments.ts`](src/engine/assessments.ts) selects the blueprint for `g5`, `g8`, `g5-mstar`, or `alg1`. The files in [`src/engine/blueprint/`](src/engine/blueprint/) define each form's fixed question slots and distribution. [`src/engine/assemble.ts`](src/engine/assemble.ts) fills those slots and verifies the resulting counts. These are app-defined practice quotas, not verified official MCAP/MSTAR quotas.
+
+Every form has 10 multiple-choice and 10 numeric questions, worth one point each. Grade 8 and Algebra I allow negative answer choices. MSTAR uses 10 content, 6 modeling, and 4 reasoning questions, with auto-gradable reasoning rather than written responses. These simplifications do not reproduce official exam lengths, calculator sections, constructed responses, or scoring rubrics.
 
 Changes that alter an existing shared test must deliberately bump the generator version. Unsupported codes produce an error rather than silently generating a different test.
+
+The three added assessments have their own code identities and golden fixtures. Adding them did not change the existing `g5.p1.v1` output.
 
 ## 3. Answers are calculated, then independently re-solved
 
@@ -63,6 +69,8 @@ key: "340"
 
 Before the question is returned, [`src/engine/verify.ts`](src/engine/verify.ts) independently solves that structured data and compares its result with the template's answer key. It also rejects multiple-choice items without exactly one correct, distinct option.
 
+The additional solvers include exact integer roots, determinant-based system solving, polynomial evaluation and expansion, quadratic discriminants, and scatter-plot covariance. For example, a system template constructs equations from a chosen solution, while the verifier solves the equations using their determinant; it never trusts the chosen solution.
+
 Fractions and decimals use the BigInt-backed [`Fraction` class](src/engine/fraction.ts) rather than ordinary floating-point arithmetic. Grading can therefore recognize:
 
 ```text
@@ -72,6 +80,8 @@ Fractions and decimals use the BigInt-backed [`Fraction` class](src/engine/fract
 without rounding errors. Equality is exact: a rounded decimal approximation is not accepted as an exact fraction.
 
 For multiple choice, grading looks up the selected option's value and compares it with the key. For numeric entry, it parses the response and key into normalized fractions and compares their numerators and denominators.
+
+Not every multiple-choice answer is a number. Factoring and inequality questions supply explicit mathematical options with canonical string keys; association and reasoning questions supply literal text options. The verifier checks those keys against the structured math, and the renderer knows whether each label is text or mathematical notation.
 
 **The verifier checks mathematical consistency. It does not read the English wording or prove that a question is pedagogically good.** Those aspects still require content review.
 
@@ -111,7 +121,9 @@ Submitting before expiry stops the clock and locks the attempt's answers.
 
 ## 6. The UI renders and saves the generated test
 
-The React UI in [`src/ui/`](src/ui/) displays the generated items, collects responses, and presents results. KaTeX renders mathematical notation; SVG components draw figures from the generated problem data. Neither rendering system decides whether an answer is correct.
+The React UI in [`src/ui/`](src/ui/) displays the generated items, collects responses, and presents results. The assessment selector controls random tests and plain seeds; a full code identifies its own assessment. Changing the selector after pasting a full code keeps only its seed, so the old assessment does not silently override the new selection.
+
+KaTeX renders mathematical notation; SVG components draw figures from the generated problem data, including coordinate graphs with negative axes and scatter plots. Neither rendering system decides whether an answer is correct.
 
 [`src/ui/storage.ts`](src/ui/storage.ts) saves answers, timing state, review flags, and navigation position in `localStorage`, keyed by the full versioned test code. Shared links contain the test identity, not answers or timer state. Stored data is validated when loaded; malformed saves are reported instead of silently overwritten.
 

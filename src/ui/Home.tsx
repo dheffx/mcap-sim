@@ -9,10 +9,10 @@ export function Home({ onPrepare }: { onPrepare: PrepareTest }) {
   const [last] = useState(readLastTest);
   return <div className="home wrap">
     <h1>Math practice</h1>
-    <p className="muted">Grade 5 · 20 questions · multiple choice and numeric entry</p>
-    <section className="panel" aria-label="Test setup"><TestSetup onPrepare={onPrepare} showAssessment /></section>
+    <p className="muted">20-question practice forms · multiple choice and numeric entry</p>
+    <section className="panel" aria-label="Test setup"><TestSetup onPrepare={onPrepare} /></section>
     {last.code && <p className="resume-row"><a href={testHref(last.code)}>Resume last test</a><code>{last.code}</code></p>}
     {last.error && <p className="error-message" role="alert">{last.error}</p>}
-    <p className="disclaimer">Original practice questions, not an official MCAP exam. The practice blueprint does not reproduce official item quotas. <a href={grade5.provenance.sourceUrl} target="_blank" rel="noreferrer">MSDE resources</a>.</p>
+    <p className="disclaimer">Original practice questions, not official MCAP or MSTAR exams. Practice forms do not reproduce official item quotas. <a href={grade5.provenance.sourceUrl} target="_blank" rel="noreferrer">MSDE resources</a>.</p>
   </div>;
 }
