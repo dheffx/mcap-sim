@@ -108,7 +108,7 @@ describe('four registered practice assessments', () => {
   it('pins the new v1 assessment outputs', () => {
     const hashes = additions.map(assessment => ({
       assessment: assessment.id,
-      hash: createHash('sha256').update(JSON.stringify(generateTest(makeCode('BAYTRAIL', assessment.id)))).digest('hex'),
+      hash: createHash('sha256').update(JSON.stringify(generateTest(makeCode('BAYTRAIL', assessment.id, 'v1')))).digest('hex'),
     }));
     expect(hashes).toMatchInlineSnapshot(`
       [
@@ -136,6 +136,7 @@ describe('independent solvers for new mathematical structures', () => {
     { data: { kind: 'root', radicand: 125, degree: 3, power: 2 }, key: '25' },
     { data: { kind: 'root', radicand: 0, degree: 2, power: 1 }, key: '0' },
     { data: { kind: 'repeating', digit: 6 }, key: '2/3' },
+    { data: { kind: 'repeating', digit: 6, whole: 3 }, key: '11/3' },
     { data: { kind: 'exponentSum', a: -4, b: 3 }, key: '-1' },
     { data: { kind: 'scientific', coefficient: 23, places: 1, exponent: 4 }, key: '23000' },
     { data: { kind: 'linearEquation', a: -4, b: 2, c: 8 }, key: '-3/2' },
@@ -153,6 +154,8 @@ describe('independent solvers for new mathematical structures', () => {
     { data: { kind: 'polynomialSum', left: [1, -3, 2], right: [4, 5, 1], degree: 1 }, key: '2' },
     { data: { kind: 'polynomialProduct', p: 3, q: 5 }, key: '8' },
     { data: { kind: 'factorization', sum: 7, product: 10 }, key: 'factor:2,5' },
+    { data: { kind: 'factorization', sum: -7, product: 10 }, key: 'factor:-5,-2' },
+    { data: { kind: 'factorization', sum: -12, product: 36 }, key: 'factor:-6,-6' },
     { data: { kind: 'quadratic', a: 1, b: 2, c: -15 }, key: '3' },
     { data: { kind: 'inequality', a: -2, b: 6, c: 14 }, key: '>:-4' },
     { data: { kind: 'trapezoidHeight', area: 42, firstBase: 5, secondBase: 9 }, key: '6' },

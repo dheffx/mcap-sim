@@ -66,7 +66,7 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
       if (data.equalSides !== 4 || data.rightAngles !== 4) throw new Error('Unsupported shape properties.');
       return 'square';
     case 'root': return [exactRoot(n(data.radicand), data.degree) ** n(data.power), 1n];
-    case 'repeating': return [n(data.digit), 9n];
+    case 'repeating': return [9n * n(data.whole ?? 0) + n(data.digit), 9n];
     case 'exponentSum': return [n(data.a) + n(data.b), 1n];
     case 'scientific': return [n(data.coefficient) * 10n ** n(data.exponent), 10n ** n(data.places)];
     case 'linearEquation': return [n(data.c) - n(data.b), n(data.a)];
@@ -110,12 +110,11 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
       }
       return [coefficient, 1n];
     }
-    case 'factorization':
-      for (let factor = 1; factor <= data.sum; factor++) {
-        const other = data.sum - factor;
-        if (other >= factor && factor * other === data.product) return `factor:${factor},${other}`;
-      }
-      throw new Error('Quadratic has no expected positive integer factorization.');
+    case 'factorization': {
+      const sum = n(data.sum), root = exactRoot(sum * sum - 4n * n(data.product), 2);
+      if ((sum - root) % 2n !== 0n) throw new Error('Expected integer factor constants.');
+      return `factor:${(sum - root) / 2n},${(sum + root) / 2n}`;
+    }
     case 'quadratic': {
       const discriminant = n(data.b) ** 2n - 4n * n(data.a) * n(data.c);
       const root = exactRoot(discriminant, 2), denominator = 2n * n(data.a);

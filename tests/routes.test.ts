@@ -26,6 +26,18 @@ describe('shareable hash routes', () => {
     if (route.kind === 'test') expect(route.test.code).toBe(code);
   });
 
+  it.each(assessments)('preserves a loaded $id legacy code on Start, but not on Use seed', assessment => {
+    const legacy = makeCode('SHARING', assessment.id, 'v1');
+    expect(resolveTestInput(' sharing ', assessment.id, legacy)).toBe(legacy);
+    expect(resolveTestInput(' sharing ', assessment.id)).toBe(makeCode('SHARING', assessment.id));
+    expect(resolveTestInput('OTHER', assessment.id, legacy)).toBe(makeCode('OTHER', assessment.id));
+    const other = assessment.id === 'g5' ? 'alg1' : 'g5';
+    expect(resolveTestInput('SHARING', other, legacy)).toBe(makeCode('SHARING', other));
+    const updated = makeCode('SHARING', assessment.id);
+    expect(resolveTestInput(updated, assessment.id, legacy)).toBe(updated);
+    expect(resolveRoute(testHref(legacy)).kind).toBe('test');
+  });
+
   it.each(['#/unknown', '#/t/%E0%A4%A', '#/t/SEED.g5.p1.v0', '#/t/SEED.g6.p1.v1', '#/t/'])('shows an explicit error for %s', hash => {
     expect(resolveRoute(hash).kind).toBe('error');
   });

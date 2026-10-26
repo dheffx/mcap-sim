@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { answerLabel, distribution, isCorrect } from '../engine/assemble';
+import { answerLabel, distribution, GENERATOR_VERSION, isCorrect, makeCode } from '../engine/assemble';
 import { assessments } from '../engine/assessments';
 import { Fraction } from '../engine/fraction';
 import type { GeneratedTest, Item } from '../engine/types';
@@ -145,9 +145,10 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
       <button className="icon-button" onClick={() => copy(`${window.location.href.split('#')[0]}${testHref(test.code)}`, 'Link')} aria-label="Copy test link" title="Copy test link"><Icon name="link" /></button>
       <span className="copy-status" role="status">{copyStatus}</span>
     </div>
+    {!test.code.endsWith(`.${GENERATOR_VERSION}`) && <p className="input-hint legacy-notice">This is an older question set. <button className="text-button" onClick={() => onPrepare(makeCode(test.seed, assessmentId), progress.durationMs)}>Use updated questions</button> starts a separate attempt with revised choices.</p>}
     <details className="panel setup-panel" open={settingsOpen} onToggle={event => setSettingsOpen(event.currentTarget.open)}>
       <summary>Test settings</summary>
-      <TestSetup initialSeed={test.seed} initialAssessmentId={assessmentId} durationMs={progress.durationMs} onPrepare={onPrepare} onStart={ready ? start : undefined} active={!ready} />
+      <TestSetup initialSeed={test.seed} initialAssessmentId={assessmentId} initialCode={test.code} durationMs={progress.durationMs} onPrepare={onPrepare} onStart={ready ? start : undefined} active={!ready} />
       {ready && <p className="ready-details">{test.items.length} questions · {test.blueprint.totalPoints} points · no calculator. Start test begins the timer and reveals question 1.{answered > 0 && ` ${answered} saved answers will be retained.`}</p>}
     </details>
 

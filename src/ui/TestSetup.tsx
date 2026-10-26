@@ -13,9 +13,10 @@ export function randomSeed(): string {
   return Array.from(values, value => alphabet[value % alphabet.length]).join('');
 }
 
-export function TestSetup({ initialSeed = '', initialAssessmentId = 'g5', durationMs = DEFAULT_DURATION_MS, onPrepare, onStart, active = false }: {
+export function TestSetup({ initialSeed = '', initialAssessmentId = 'g5', initialCode, durationMs = DEFAULT_DURATION_MS, onPrepare, onStart, active = false }: {
   initialSeed?: string;
   initialAssessmentId?: string;
+  initialCode?: string;
   durationMs?: number;
   onPrepare: PrepareTest;
   onStart?: (code: string, durationMs: number) => void;
@@ -31,7 +32,7 @@ export function TestSetup({ initialSeed = '', initialAssessmentId = 'g5', durati
       const duration = durationFromMinutes(minutes);
       const code = mode === 'random' || !seed.trim()
         ? makeCode(randomSeed(), assessmentId)
-        : resolveTestInput(seed, assessmentId);
+        : resolveTestInput(seed, assessmentId, mode === 'start' ? initialCode : undefined);
       setError('');
       if (mode === 'start' && onStart) onStart(code, duration);
       else onPrepare(code, duration);

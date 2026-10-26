@@ -5,10 +5,14 @@ import { numericChoices } from './templates/g5';
 import { allTemplates } from './templates';
 import type { GeneratedTest, Item } from './types';
 import { verifyItem } from './verify';
+import { verifyChoiceQuality } from './choice-quality';
+import { generateReviewedDraft } from './templates/reviewed';
 
-export const GENERATOR_VERSION = 'v1';
+export const GENERATOR_VERSION = 'v2';
+export const SUPPORTED_GENERATOR_VERSIONS = ['v1', 'v2'] as const;
+type GeneratorVersion = typeof SUPPORTED_GENERATOR_VERSIONS[number];
 
-export function makeCode(seed: string, assessmentId = 'g5'): string {
+export function makeCode(seed: string, assessmentId = 'g5', version: GeneratorVersion = GENERATOR_VERSION): string {
   const normalized = seed.trim().toUpperCase();
   if (!/^[A-Z0-9_-]{1,40}$/.test(normalized)) {
     throw new Error('Use 1–40 letters, numbers, hyphens, or underscores for your seed.');
@@ -17,23 +21,26 @@ export function makeCode(seed: string, assessmentId = 'g5'): string {
   if (!assessment?.blueprint || assessment.status !== 'available') {
     throw new Error('This assessment is not available yet.');
   }
-  return `${normalized}.${assessment.id}.${assessment.blueprint.id}.${GENERATOR_VERSION}`;
+  return `${normalized}.${assessment.id}.${assessment.blueprint.id}.${version}`;
 }
 
 export function generateTest(code: string): GeneratedTest {
   const parts = code.split('.');
-  if (parts.length !== 4) throw new Error('This test code is incomplete. Expected SEED.g5.p1.v1.');
+  if (parts.length !== 4) throw new Error(`This test code is incomplete. Expected SEED.g5.p1.${GENERATOR_VERSION}.`);
   const [seed, assessmentId, blueprintId, version] = parts;
-  if (version !== GENERATOR_VERSION) throw new Error(`Generator "${version}" is not supported. This app supports ${GENERATOR_VERSION}. Your saved test has not been changed.`);
+  if (version !== 'v1' && version !== 'v2') throw new Error(`Generator "${version}" is not supported. This app supports ${SUPPORTED_GENERATOR_VERSIONS.join(' and ')}. Your saved test has not been changed.`);
   const assessment = assessments.find(entry => entry.id === assessmentId);
   if (!assessment?.blueprint || assessment.status !== 'available') throw new Error('This assessment is not available yet.');
   const blueprint = assessment.blueprint;
   if (blueprintId !== blueprint.id) throw new Error(`Blueprint "${blueprintId}" is not supported. Choose a new practice test from the home page.`);
-  const canonicalCode = makeCode(seed!, assessment.id);
+  const canonicalCode = makeCode(seed!, assessment.id, version);
   const items: Item[] = blueprint.slots.map((templateId, index) => {
     const template = allTemplates.find(entry => entry.id === templateId);
     if (!template) throw new Error(`Missing template: ${templateId}`);
-    const draft = template.generate(slotRng(canonicalCode, index));
+    const draft = version === 'v1'
+      ? template.generate(slotRng(canonicalCode, index))
+      : generateReviewedDraft(template, slotRng(canonicalCode, index), blueprint.allowNegativeChoices);
+    if (version === 'v2' && template.type === 'mc' && !draft.choices) throw new Error(`Missing reviewed choices for ${templateId}.`);
     const choices = template.type === 'mc'
       ? numericChoices(draft, slotRng(canonicalCode, index, 'options'), blueprint.allowNegativeChoices).map((choice, i) => ({ ...choice, id: String.fromCharCode(65 + i) }))
       : undefined;
@@ -53,6 +60,7 @@ export function generateTest(code: string): GeneratedTest {
       choices,
     };
     verifyItem(item);
+    if (version === 'v2') verifyChoiceQuality(item);
     return item;
   });
   const test = { code: canonicalCode, seed: canonicalCode.split('.')[0]!, blueprint, items };

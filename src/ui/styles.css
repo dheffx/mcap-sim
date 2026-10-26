@@ -75,6 +75,7 @@ input::placeholder { color: #72777c; font-weight: 400; font-size: 13px; }
 .timer.expired, .timer.low-time { background: #fff3f1; border-color: #edc8c2; }
 .share-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
 .test-code { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.legacy-notice { margin: 0 0 14px; }
 .icon-button { border: 0; background: none; color: var(--muted); padding: 5px; }
 .icon-button svg { width: 14px; height: 14px; }
 .setup-panel { padding: 15px 18px; margin-bottom: 20px; background: #f0f5fe; border-color: #d4e0f5; }

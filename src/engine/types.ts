@@ -20,7 +20,7 @@ export type ProblemData =
   | { kind: 'coordinate'; x: number; y: number }
   | { kind: 'shape'; equalSides: number; rightAngles: number }
   | { kind: 'root'; radicand: number; degree: 2 | 3; power: number }
-  | { kind: 'repeating'; digit: number }
+  | { kind: 'repeating'; digit: number; whole?: number }
   | { kind: 'exponentSum'; a: number; b: number }
   | { kind: 'scientific'; coefficient: number; places: number; exponent: number }
   | { kind: 'linearEquation'; a: number; b: number; c: number }
@@ -68,6 +68,7 @@ export interface ChoiceDraft {
   label: string;
   misconception: string | null;
   text?: boolean;
+  errorModel?: string;
 }
 
 export interface Choice extends ChoiceDraft {

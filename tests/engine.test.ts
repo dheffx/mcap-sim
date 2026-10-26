@@ -16,7 +16,7 @@ const seedArbitrary = fc.array(fc.constantFrom(...'ABCDEFGHIJKLMNOPQRSTUVWXYZ012
 
 describe('versioned codes and reproducibility', () => {
   it('normalizes seeds but pins assessment, blueprint, and generator versions', () => {
-    expect(makeCode(' baytrail ')).toBe('BAYTRAIL.g5.p1.v1');
+    expect(makeCode(' baytrail ')).toBe('BAYTRAIL.g5.p1.v2');
     expect(generateTest('baytrail.g5.p1.v1')).toEqual(generateTest('BAYTRAIL.g5.p1.v1'));
     expect(generateTest(' baytrail .g5.p1.v1')).toEqual(generateTest('BAYTRAIL.g5.p1.v1'));
   });
@@ -53,7 +53,7 @@ describe('versioned codes and reproducibility', () => {
 
   it('freezes v1 output: changes require a deliberate generator version bump', () => {
     const hashes = ['BAYTRAIL', 'MARYLAND', 'FRACTIONS-42'].map(seed =>
-      createHash('sha256').update(JSON.stringify(generateTest(makeCode(seed)))).digest('hex'),
+      createHash('sha256').update(JSON.stringify(generateTest(makeCode(seed, 'g5', 'v1')))).digest('hex'),
     );
     expect(hashes).toMatchInlineSnapshot(`
       [

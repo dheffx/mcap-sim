@@ -1,6 +1,10 @@
 import { generateTest, makeCode } from '../engine/assemble';
 
-export function resolveTestInput(input: string, assessmentId: string): string {
+export function resolveTestInput(input: string, assessmentId: string, existingCode?: string): string {
+  if (existingCode && !input.includes('.')) {
+    const [seed, existingAssessment] = existingCode.split('.');
+    if (input.trim().toUpperCase() === seed && assessmentId === existingAssessment) return generateTest(existingCode).code;
+  }
   return input.includes('.') ? generateTest(input.trim()).code : makeCode(input, assessmentId);
 }
 
