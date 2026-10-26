@@ -36,6 +36,9 @@ describe('shareable hash routes', () => {
     const updated = makeCode('SHARING', assessment.id);
     expect(resolveTestInput(updated, assessment.id, legacy)).toBe(updated);
     expect(resolveRoute(testHref(legacy)).kind).toBe('test');
+    const reviewed = makeCode('SHARING', assessment.id, 'v2');
+    expect(resolveTestInput(' sharing ', assessment.id, reviewed)).toBe(reviewed);
+    expect(resolveRoute(testHref(reviewed)).kind).toBe('test');
   });
 
   it.each(['#/unknown', '#/t/%E0%A4%A', '#/t/SEED.g5.p1.v0', '#/t/SEED.g6.p1.v1', '#/t/'])('shows an explicit error for %s', hash => {

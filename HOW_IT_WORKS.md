@@ -27,7 +27,9 @@ For division, some problems are constructed backward: choose the divisor and des
 
 There are **70 unique templates**: 20 legacy Grade 5, 20 Grade 8, 20 Algebra I, and 10 additional MSTAR modeling/reasoning templates. The MSTAR form reuses 10 Grade 5 content templates and remaps their reporting categories to content.
 
-**Current limitation:** each assessment uses 20 fixed template slots in the same order. New seeds primarily vary numbers, some context, and answer-choice positions, not entirely new question structures.
+V3 adds authored context, representation, and task variants for every template in [`varied.ts`](src/engine/templates/varied.ts). Multiplication can appear as seating, area, production, or inventory without displaying the operation as a hint. Measurement problems combine quantities in different units and convert in either direction rather than always appending three zeros. Other variants ask for different prism dimensions, quadrilateral classes, missing triangle legs, interior/exterior angles, exponent operations, roots with different signs, growth/decay, or missing data values.
+
+Not every variant is a new mathematical structure: some deliberately practice the same skill in different contexts or representations. Each form still covers its fixed 20 skill slots, with a seeded shuffle of their final order. This remains a finite authored bank, not unlimited runtime-generated prose. Retaking the same full code intentionally reproduces the same questions; a different seed selects a different mix.
 
 ## 2. The seed makes the randomness repeatable
 
@@ -36,7 +38,7 @@ There are **70 unique templates**: 20 legacy Grade 5, 20 Grade 8, 20 Algebra I, 
 A code such as:
 
 ```text
-BAYTRAIL.g5.p1.v2
+BAYTRAIL.g5.p1.v3
 ```
 
 pins four things:
@@ -46,17 +48,17 @@ pins four things:
 | `BAYTRAIL` | Seed |
 | `g5` | Assessment |
 | `p1` | Practice blueprint version |
-| `v2` | Generator/content version |
+| `v3` | Generator/content version |
 
-Each question gets its own random stream, derived from the code and its question index. Choice ordering uses another stream. Generating more random values for question 1 therefore does not shift the numbers used for question 2.
+Each skill slot gets its own random stream, derived from the code and its fixed blueprint index. Choice ordering uses another stream; v3 uses a separate stream for the final question-order shuffle. Generating more random values for one slot therefore does not shift the numbers used by other slots. The displayed response IDs are assigned after shuffling.
 
 [`src/engine/assessments.ts`](src/engine/assessments.ts) selects the blueprint for `g5`, `g8`, `g5-mstar`, or `alg1`. The files in [`src/engine/blueprint/`](src/engine/blueprint/) define each form's fixed question slots and distribution. [`src/engine/assemble.ts`](src/engine/assemble.ts) fills those slots and verifies the resulting counts. These are app-defined practice quotas, not verified official MCAP/MSTAR quotas.
 
 Every form has 10 multiple-choice and 10 numeric questions, worth one point each. Grade 8 and Algebra I allow negative answer choices. MSTAR uses 10 content, 6 modeling, and 4 reasoning questions, with auto-gradable reasoning rather than written responses. These simplifications do not reproduce official exam lengths, calculator sections, constructed responses, or scoring rubrics.
 
-Changes that alter an existing shared test must deliberately bump the generator version. New tests use **v2**; existing **v1** codes still generate their original questions and options. Starting or resuming a v1 attempt preserves its version. **Use updated questions** explicitly prepares a separate v2 attempt with the same seed; the old version's saved work stays under its original code. A new random test or plain seed also uses v2. Unsupported codes produce an error rather than silently generating a different test.
+Changes that alter an existing shared test must deliberately bump the generator version. New tests use **v3**; existing **v1 and v2** codes still generate their original questions, options, and order. Starting or resuming an older attempt preserves its version. **Use updated questions** explicitly prepares a separate v3 attempt with the same seed; each old version's saved work stays under its original code. A new random test or plain seed also uses v3. Unsupported codes produce an error rather than silently generating a different test.
 
-All four assessments have version-pinned golden fixtures. The original v1 template modules are retained unchanged; [`reviewed.ts`](src/engine/templates/reviewed.ts) supplies the v2 multiple-choice revisions.
+All four assessments have version-pinned golden fixtures for each supported version. The original v1 template modules are retained unchanged; [`reviewed.ts`](src/engine/templates/reviewed.ts) supplies the v2 multiple-choice revisions. V3 builds on those reviewed generators and shared explicit-choice selection, adding its own variants and error models without changing v2 output.
 
 ## 3. Answers are calculated, then independently re-solved
 
@@ -98,7 +100,7 @@ For a multiplication question, choices can represent these possible errors:
 | Omitted actual carry | Regrouping error | Explain the carry generated by these specific digits |
 | Carry included twice | Regrouping error | Explain that the carry is included once |
 
-Each wrong v2 option carries a named `errorModel` and a specific `misconception` message. On review, the UI looks up the selected option and displays that message alongside the correct answer and worked solution. It is an explanation of a possible mistake, not a diagnosis of what the student actually thought.
+Each wrong v2/v3 option carries a named `errorModel` and a specific `misconception` message. On review, the UI looks up the selected option and displays that message alongside the correct answer and worked solution. It is an explanation of a possible mistake, not a diagnosis of what the student actually thought.
 
 The v2 review covers all **35 unique multiple-choice templates** across the four forms. Numeric options come from authored operations, not automatic +1/−1 fillers. Parameter sets that produce duplicate or insufficient choices are redrawn deterministically, with a bounded failure rather than a generic fallback. Symbolic and reasoning options are authored explicitly.
 

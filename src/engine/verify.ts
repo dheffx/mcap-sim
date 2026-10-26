@@ -50,6 +50,8 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
       return [term, 1n];
     }
     case 'volume': {
+      if (data.missing === 'length') return [n(data.volume), n(data.width) * n(data.height)];
+      if (data.missing === 'width') return [n(data.volume), n(data.length) * n(data.height)];
       if (data.missingHeight) return [n(data.volume), n(data.length) * n(data.width)];
       let cubes = 0n;
       for (let layer = 0; layer < data.height; layer++) cubes += n(data.length) * n(data.width);
@@ -61,14 +63,16 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
       for (let i = 0; i < data.counts.length; i++) sum += n(data.counts[i]!) * n(i + 1);
       return [sum, n(data.denominator)];
     }
-    case 'coordinate': return [n(data.x), 1n];
+    case 'coordinate': return [n(data.axis === 'y' ? data.y : data.x), 1n];
     case 'shape':
       if (data.equalSides !== 4 || data.rightAngles !== 4) throw new Error('Unsupported shape properties.');
       return 'square';
     case 'root': return [exactRoot(n(data.radicand), data.degree) ** n(data.power), 1n];
     case 'repeating': return [9n * n(data.whole ?? 0) + n(data.digit), 9n];
     case 'exponentSum': return [n(data.a) + n(data.b), 1n];
-    case 'scientific': return [n(data.coefficient) * 10n ** n(data.exponent), 10n ** n(data.places)];
+    case 'scientific': return data.exponent < 0
+      ? [n(data.coefficient), 10n ** n(data.places - data.exponent)]
+      : [n(data.coefficient) * 10n ** n(data.exponent), 10n ** n(data.places)];
     case 'linearEquation': return [n(data.c) - n(data.b), n(data.a)];
     case 'distributedEquation': return [n(data.d) - n(data.a) * n(data.b), n(data.a) - n(data.c)];
     case 'slope': return [n(data.y2) - n(data.y1), n(data.x2) - n(data.x1)];
@@ -83,7 +87,7 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
     case 'rateDifference': return [n(data.first) - n(data.second), 1n];
     case 'pythagorean': return [exactRoot(n(data.a) ** 2n + n(data.b) ** 2n, 2), 1n];
     case 'distance': return [exactRoot((n(data.x2) - n(data.x1)) ** 2n + (n(data.y2) - n(data.y1)) ** 2n, 2), 1n];
-    case 'dilation': return [n(data.x) * n(data.factor), 1n];
+    case 'dilation': return [n(data.x) * n(data.factor), n(data.denominator ?? 1)];
     case 'triangleAngle': return [180n - n(data.a) - n(data.b), 1n];
     case 'cylinder': return [n(data.radius) ** 2n * n(data.height), 1n];
     case 'association': {
@@ -105,7 +109,7 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
       let coefficient = 0n;
       for (let i = 0; i < first.length; i++) {
         for (let j = 0; j < second.length; j++) {
-          if (i + j === 1) coefficient += first[i]! * second[j]!;
+          if (i + j === (data.degree ?? 1)) coefficient += first[i]! * second[j]!;
         }
       }
       return [coefficient, 1n];
@@ -118,14 +122,17 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
     case 'quadratic': {
       const discriminant = n(data.b) ** 2n - 4n * n(data.a) * n(data.c);
       const root = exactRoot(discriminant, 2), denominator = 2n * n(data.a);
-      const positive = [-n(data.b) + root, -n(data.b) - root].filter(value => value * denominator > 0n);
-      if (positive.length !== 1) throw new Error('Expected exactly one positive quadratic solution.');
-      return [positive[0]!, denominator];
+      const selected = [-n(data.b) + root, -n(data.b) - root].filter(value =>
+        data.root === 'negative' ? value * denominator < 0n : value * denominator > 0n);
+      if (selected.length !== 1) throw new Error('Expected exactly one quadratic solution with the requested sign.');
+      return [selected[0]!, denominator];
     }
     case 'inequality': {
       if (data.a === 0) throw new Error('An inequality must have a nonzero x coefficient.');
       const boundary = new Fraction(n(data.c) - n(data.b), n(data.a)).toString();
-      return `${data.a < 0 ? '>' : '<'}:${boundary}`;
+      const symbol = data.symbol ?? '<';
+      const reverse = { '<': '>', '>': '<', '<=': '>=', '>=': '<=' } as const;
+      return `${data.a < 0 ? reverse[symbol] : symbol}:${boundary}`;
     }
     case 'trapezoidHeight': return [2n * n(data.area), n(data.firstBase) + n(data.secondBase)];
     case 'polynomialValue': return [evaluate(data.coefficients, n(data.input)), 1n];
@@ -136,11 +143,12 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
     case 'exponential': {
       let result = n(data.initial);
       for (let period = 0; period < data.periods; period++) result *= n(data.factor);
-      return [result, 1n];
+      return [result, n(data.factorDenominator ?? 1) ** n(data.periods)];
     }
     case 'vertex': {
       const a = n(data.a), b = -2n * a * n(data.h), c = a * n(data.h) ** 2n + n(data.k);
-      if (a <= 0n) throw new Error('The quadratic must have a minimum.');
+      if (data.extremum === 'maximum' ? a >= 0n : a <= 0n) throw new Error(`The quadratic must have a ${data.extremum ?? 'minimum'}.`);
+      if (data.target === 'input') return [-b, 2n * a];
       return [4n * a * c - b * b, 4n * a];
     }
     case 'xIntercept': return [-n(data.intercept), n(data.slope)];
@@ -154,16 +162,46 @@ function solve(data: ProblemData): readonly [bigint, bigint] | string {
     case 'purchase': return [n(data.units) * n(data.priceCents) + n(data.feeCents), 100n];
     case 'trips': return [(n(data.people) + n(data.capacity) - 1n) / n(data.capacity), 1n];
     case 'combinedVolume': return [
-      data.first.reduce((volume, side) => volume * n(side), 1n) + data.second.reduce((volume, side) => volume * n(side), 1n), 1n,
+      data.first.reduce((volume, side) => volume * n(side), 1n) +
+        (data.operation === 'subtract' ? -1n : 1n) * data.second.reduce((volume, side) => volume * n(side), 1n), 1n,
     ];
-    case 'placeRatio': return [10n ** n(data.power), 1n];
+    case 'placeRatio': return data.inverse ? [1n, 10n ** n(data.power)] : [10n ** n(data.power), 1n];
     case 'fractionMistake': {
-      const actual = (n(data.a) * n(data.d) + n(data.c) * n(data.b)) * (n(data.b) + n(data.d));
-      const claimed = (n(data.a) + n(data.c)) * n(data.b) * n(data.d);
+      const actual = (n(data.a) * n(data.d) + n(data.c) * n(data.b)) * n(data.claimDenominator ?? data.b + data.d);
+      const claimed = n(data.claimNumerator ?? data.a + data.c) * n(data.b) * n(data.d);
       if (actual === claimed) throw new Error('The claimed fraction sum must be wrong.');
       return 'common-denominator';
     }
     case 'fractionScale': return data.numerator < data.denominator ? 'less' : data.numerator > data.denominator ? 'greater' : 'equal';
+    case 'measurement': {
+      if (!data.amounts.length || (data.operation === 'subtract' && data.amounts.length !== 2)) throw new Error('Invalid measurement operands.');
+      if (data.targetFactor <= 0 || data.amounts.some(amount => amount.scale <= 0 || amount.unitFactor <= 0)) throw new Error('Measurement scales must be positive.');
+      let numerator = 0n, denominator = 1n;
+      for (const [index, amount] of data.amounts.entries()) {
+        const sign = data.operation === 'subtract' && index > 0 ? -1n : 1n;
+        numerator = numerator * n(amount.scale) + sign * n(amount.value) * n(amount.unitFactor) * denominator;
+        denominator *= n(amount.scale);
+      }
+      return [numerator, denominator * n(data.targetFactor)];
+    }
+    case 'rightTriangle': return [exactRoot(data.target === 'leg'
+      ? n(data.second) ** 2n - n(data.first) ** 2n
+      : n(data.first) ** 2n + n(data.second) ** 2n, 2), 1n];
+    case 'cylinderMeasure':
+      if (data.known <= 0 || data.coefficient <= 0) throw new Error('Cylinder measurements must be positive.');
+      if (data.target === 'height') return [n(data.coefficient), n(data.known) ** 2n];
+      if (data.coefficient % data.known !== 0) throw new Error('Expected an exact radius squared.');
+      return [exactRoot(n(data.coefficient) / n(data.known), 2), 1n];
+    case 'quadrilateral':
+      if (!data.oppositeSidesParallel) throw new Error('Unsupported quadrilateral properties.');
+      return data.rightAngles ? data.allSidesEqual ? 'square' : 'rectangle' : data.allSidesEqual ? 'rhombus' : 'parallelogram';
+    case 'exponentRule': return [data.operation === 'multiply' ? n(data.a) + n(data.b)
+      : data.operation === 'divide' ? n(data.a) - n(data.b) : n(data.a) * n(data.b), 1n];
+    case 'triangleExterior': return [n(data.a) + n(data.b), 1n];
+    case 'missingMean': return [
+      n(data.meanNumerator) * n(data.known.length + 1) - data.known.reduce((sum, value) => sum + n(value), 0n) * n(data.meanDenominator),
+      n(data.meanDenominator),
+    ];
   }
 }
 

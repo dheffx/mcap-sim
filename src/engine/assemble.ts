@@ -1,15 +1,16 @@
 import { assessments } from './assessments';
 import { Fraction } from './fraction';
-import { slotRng } from './rng';
+import { Rng, slotRng } from './rng';
 import { numericChoices } from './templates/g5';
 import { allTemplates } from './templates';
 import type { GeneratedTest, Item } from './types';
 import { verifyItem } from './verify';
 import { verifyChoiceQuality } from './choice-quality';
 import { generateReviewedDraft } from './templates/reviewed';
+import { generateVariedDraft } from './templates/varied';
 
-export const GENERATOR_VERSION = 'v2';
-export const SUPPORTED_GENERATOR_VERSIONS = ['v1', 'v2'] as const;
+export const GENERATOR_VERSION = 'v3';
+export const SUPPORTED_GENERATOR_VERSIONS = ['v1', 'v2', 'v3'] as const;
 type GeneratorVersion = typeof SUPPORTED_GENERATOR_VERSIONS[number];
 
 export function makeCode(seed: string, assessmentId = 'g5', version: GeneratorVersion = GENERATOR_VERSION): string {
@@ -28,7 +29,7 @@ export function generateTest(code: string): GeneratedTest {
   const parts = code.split('.');
   if (parts.length !== 4) throw new Error(`This test code is incomplete. Expected SEED.g5.p1.${GENERATOR_VERSION}.`);
   const [seed, assessmentId, blueprintId, version] = parts;
-  if (version !== 'v1' && version !== 'v2') throw new Error(`Generator "${version}" is not supported. This app supports ${SUPPORTED_GENERATOR_VERSIONS.join(' and ')}. Your saved test has not been changed.`);
+  if (version !== 'v1' && version !== 'v2' && version !== 'v3') throw new Error(`Generator "${version}" is not supported. This app supports ${SUPPORTED_GENERATOR_VERSIONS.join(', ')}. Your saved test has not been changed.`);
   const assessment = assessments.find(entry => entry.id === assessmentId);
   if (!assessment?.blueprint || assessment.status !== 'available') throw new Error('This assessment is not available yet.');
   const blueprint = assessment.blueprint;
@@ -39,8 +40,10 @@ export function generateTest(code: string): GeneratedTest {
     if (!template) throw new Error(`Missing template: ${templateId}`);
     const draft = version === 'v1'
       ? template.generate(slotRng(canonicalCode, index))
-      : generateReviewedDraft(template, slotRng(canonicalCode, index), blueprint.allowNegativeChoices);
-    if (version === 'v2' && template.type === 'mc' && !draft.choices) throw new Error(`Missing reviewed choices for ${templateId}.`);
+      : version === 'v2'
+        ? generateReviewedDraft(template, slotRng(canonicalCode, index), blueprint.allowNegativeChoices)
+        : generateVariedDraft(template, slotRng(canonicalCode, index), blueprint.allowNegativeChoices);
+    if (version !== 'v1' && template.type === 'mc' && !draft.choices) throw new Error(`Missing reviewed choices for ${templateId}.`);
     const choices = template.type === 'mc'
       ? numericChoices(draft, slotRng(canonicalCode, index, 'options'), blueprint.allowNegativeChoices).map((choice, i) => ({ ...choice, id: String.fromCharCode(65 + i) }))
       : undefined;
@@ -60,10 +63,13 @@ export function generateTest(code: string): GeneratedTest {
       choices,
     };
     verifyItem(item);
-    if (version === 'v2') verifyChoiceQuality(item);
+    if (version !== 'v1') verifyChoiceQuality(item);
     return item;
   });
-  const test = { code: canonicalCode, seed: canonicalCode.split('.')[0]!, blueprint, items };
+  const ordered = version === 'v3'
+    ? new Rng(`${canonicalCode}:question-order`).shuffle(items).map((item, index) => ({ ...item, id: `q${index + 1}` }))
+    : items;
+  const test = { code: canonicalCode, seed: canonicalCode.split('.')[0]!, blueprint, items: ordered };
   assertDistribution(test);
   return test;
 }

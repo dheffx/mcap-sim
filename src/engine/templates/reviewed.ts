@@ -3,7 +3,7 @@ import type { Rng } from '../rng';
 import type { ChoiceDraft, Draft, ProblemData, Template } from '../types';
 import { f, polynomial } from './shared';
 
-interface Mistake {
+export interface Mistake {
   value: Fraction;
   errorModel: string;
   misconception: string;
@@ -303,12 +303,12 @@ function numericMistakes(data: ProblemData): Mistake[] {
   }
 }
 
-function numericChoices(draft: Draft, rng: Rng, allowNegative: boolean): ChoiceDraft[] | null {
+export function numericChoices(draft: Draft, rng: Rng, allowNegative: boolean, candidates?: readonly Mistake[]): ChoiceDraft[] | null {
   if (typeof draft.answer === 'string') throw new Error('Expected a numeric answer.');
   const answer = draft.answer, data = draft.data;
   const quantity = ['product', 'unitDivision', 'volume', 'plot', 'triangleAngle', 'distance', 'purchase', 'trips'].includes(data.kind);
   const distinct = new Map<string, Mistake>();
-  for (const candidate of numericMistakes(data)) {
+  for (const candidate of candidates ?? numericMistakes(data)) {
     const value = candidate.value;
     if (value.equals(answer) || ((!allowNegative || quantity) && value.n < 0n) || (quantity && value.n === 0n)) continue;
     if (data.kind === 'triangleAngle' && value.n >= 180n * value.d) continue;

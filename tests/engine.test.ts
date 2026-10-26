@@ -16,7 +16,7 @@ const seedArbitrary = fc.array(fc.constantFrom(...'ABCDEFGHIJKLMNOPQRSTUVWXYZ012
 
 describe('versioned codes and reproducibility', () => {
   it('normalizes seeds but pins assessment, blueprint, and generator versions', () => {
-    expect(makeCode(' baytrail ')).toBe('BAYTRAIL.g5.p1.v2');
+    expect(makeCode(' baytrail ')).toBe('BAYTRAIL.g5.p1.v3');
     expect(generateTest('baytrail.g5.p1.v1')).toEqual(generateTest('BAYTRAIL.g5.p1.v1'));
     expect(generateTest(' baytrail .g5.p1.v1')).toEqual(generateTest('BAYTRAIL.g5.p1.v1'));
   });
@@ -90,7 +90,7 @@ describe('blueprint-driven assembly and independent verification', () => {
         if (item.type === 'mc') {
           for (const choice of item.choices!) {
             expect(isCorrect(item, choice.id)).toBe(choice.value === item.key);
-            if (item.data.kind !== 'shape') {
+            if (!choice.text && item.data.kind !== 'shape') {
               expect(() => katex.renderToString(choice.label, { throwOnError: true })).not.toThrow();
               expect(Fraction.parse(choice.value)!.n >= 0n).toBe(true);
             }
@@ -127,7 +127,7 @@ describe('blueprint-driven assembly and independent verification', () => {
     const second = generateTest(makeCode('SECOND'));
     expect(first.items.filter((item, index) => JSON.stringify(item.data) !== JSON.stringify(second.items[index]!.data)).length).toBeGreaterThan(15);
     const positions = new Set(Array.from({ length: 20 }, (_, i) => {
-      const item = generateTest(makeCode(`POSITION${i}`)).items[0]!;
+      const item = generateTest(makeCode(`POSITION${i}`)).items.find(item => item.templateId === 'nbt.multiply')!;
       return item.choices!.find(choice => choice.value === item.key)!.id;
     }));
     expect(positions.size).toBe(4);

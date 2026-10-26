@@ -145,7 +145,7 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
       <button className="icon-button" onClick={() => copy(`${window.location.href.split('#')[0]}${testHref(test.code)}`, 'Link')} aria-label="Copy test link" title="Copy test link"><Icon name="link" /></button>
       <span className="copy-status" role="status">{copyStatus}</span>
     </div>
-    {!test.code.endsWith(`.${GENERATOR_VERSION}`) && <p className="input-hint legacy-notice">This is an older question set. <button className="text-button" onClick={() => onPrepare(makeCode(test.seed, assessmentId), progress.durationMs)}>Use updated questions</button> starts a separate attempt with revised choices.</p>}
+    {!test.code.endsWith(`.${GENERATOR_VERSION}`) && <p className="input-hint legacy-notice">This is an older question set. <button className="text-button" onClick={() => onPrepare(makeCode(test.seed, assessmentId), progress.durationMs)}>Use updated questions</button> starts a separate attempt with current content.</p>}
     <details className="panel setup-panel" open={settingsOpen} onToggle={event => setSettingsOpen(event.currentTarget.open)}>
       <summary>Test settings</summary>
       <TestSetup initialSeed={test.seed} initialAssessmentId={assessmentId} initialCode={test.code} durationMs={progress.durationMs} onPrepare={onPrepare} onStart={ready ? start : undefined} active={!ready} />

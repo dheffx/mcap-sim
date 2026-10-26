@@ -11,7 +11,7 @@ import type { Item } from '../src/engine/types';
 import { verifyItem } from '../src/engine/verify';
 
 const forms = assessments.flatMap(assessment =>
-  Array.from({ length: 200 }, (_, seed) => generateTest(makeCode(`QUALITY-${seed}`, assessment.id))),
+  Array.from({ length: 200 }, (_, seed) => generateTest(makeCode(`QUALITY-${seed}`, assessment.id, 'v2'))),
 );
 const items = forms.flatMap(form => form.items).filter(item => item.type === 'mc');
 const numeric = (value: string) => {
@@ -171,7 +171,7 @@ describe('reviewed multiple-choice content', () => {
   it('pins reviewed v2 output separately from the unchanged v1 fixtures', () => {
     const hashes = assessments.map(assessment => ({
       assessment: assessment.id,
-      hash: createHash('sha256').update(JSON.stringify(generateTest(makeCode('BAYTRAIL', assessment.id)))).digest('hex'),
+      hash: createHash('sha256').update(JSON.stringify(generateTest(makeCode('BAYTRAIL', assessment.id, 'v2')))).digest('hex'),
     }));
     expect(hashes).toMatchInlineSnapshot(`
       [

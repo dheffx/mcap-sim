@@ -14,10 +14,10 @@ export type ProblemData =
   | { kind: 'unitDivision'; whole: number; denominator: number; unitFirst: boolean }
   | { kind: 'expression'; a: number; b: number; c: number }
   | { kind: 'pattern'; start: number; step: number; index: number }
-  | { kind: 'volume'; length: number; width: number; height: number; missingHeight: boolean; volume: number }
+  | { kind: 'volume'; length: number; width: number; height: number; missingHeight: boolean; volume: number; missing?: 'length' | 'width' | 'height' }
   | { kind: 'conversion'; quantity: number; factor: number }
   | { kind: 'plot'; counts: number[]; denominator: number }
-  | { kind: 'coordinate'; x: number; y: number }
+  | { kind: 'coordinate'; x: number; y: number; axis?: 'x' | 'y' }
   | { kind: 'shape'; equalSides: number; rightAngles: number }
   | { kind: 'root'; radicand: number; degree: 2 | 3; power: number }
   | { kind: 'repeating'; digit: number; whole?: number }
@@ -31,31 +31,38 @@ export type ProblemData =
   | { kind: 'rateDifference'; first: number; second: number }
   | { kind: 'pythagorean'; a: number; b: number }
   | { kind: 'distance'; x1: number; y1: number; x2: number; y2: number }
-  | { kind: 'dilation'; x: number; factor: number }
+  | { kind: 'dilation'; x: number; factor: number; denominator?: number }
   | { kind: 'triangleAngle'; a: number; b: number }
   | { kind: 'cylinder'; radius: number; height: number }
   | { kind: 'association'; points: readonly (readonly [number, number])[] }
   | { kind: 'conditionalRate'; successes: number; other: number }
   | { kind: 'polynomialSum'; left: number[]; right: number[]; degree: number }
-  | { kind: 'polynomialProduct'; p: number; q: number }
+  | { kind: 'polynomialProduct'; p: number; q: number; degree?: 0 | 1 }
   | { kind: 'factorization'; sum: number; product: number }
-  | { kind: 'quadratic'; a: number; b: number; c: number }
-  | { kind: 'inequality'; a: number; b: number; c: number }
+  | { kind: 'quadratic'; a: number; b: number; c: number; root?: 'positive' | 'negative' }
+  | { kind: 'inequality'; a: number; b: number; c: number; symbol?: '<' | '>' | '<=' | '>=' }
   | { kind: 'trapezoidHeight'; area: number; firstBase: number; secondBase: number }
   | { kind: 'polynomialValue'; coefficients: number[]; input: number }
   | { kind: 'averageRate'; coefficients: number[]; first: number; second: number }
-  | { kind: 'exponential'; initial: number; factor: number; periods: number }
-  | { kind: 'vertex'; a: number; h: number; k: number }
+  | { kind: 'exponential'; initial: number; factor: number; periods: number; factorDenominator?: number }
+  | { kind: 'vertex'; a: number; h: number; k: number; target?: 'input' | 'value'; extremum?: 'minimum' | 'maximum' }
   | { kind: 'xIntercept'; slope: number; intercept: number }
   | { kind: 'mean'; values: number[] }
   | { kind: 'median'; values: number[] }
   | { kind: 'gardenArea'; length: number; widthNumerator: number; widthDenominator: number }
   | { kind: 'purchase'; units: number; priceCents: number; feeCents: number }
   | { kind: 'trips'; people: number; capacity: number }
-  | { kind: 'combinedVolume'; first: readonly [number, number, number]; second: readonly [number, number, number] }
-  | { kind: 'placeRatio'; power: number }
-  | { kind: 'fractionMistake'; a: number; b: number; c: number; d: number }
-  | { kind: 'fractionScale'; numerator: number; denominator: number };
+  | { kind: 'combinedVolume'; first: readonly [number, number, number]; second: readonly [number, number, number]; operation?: 'add' | 'subtract' }
+  | { kind: 'placeRatio'; power: number; inverse?: boolean }
+  | { kind: 'fractionMistake'; a: number; b: number; c: number; d: number; claimNumerator?: number; claimDenominator?: number }
+  | { kind: 'fractionScale'; numerator: number; denominator: number }
+  | { kind: 'measurement'; amounts: readonly { value: number; scale: number; unitFactor: number }[]; targetFactor: number; operation: 'add' | 'subtract' }
+  | { kind: 'rightTriangle'; first: number; second: number; target: 'hypotenuse' | 'leg' }
+  | { kind: 'cylinderMeasure'; coefficient: number; known: number; target: 'radius' | 'height' }
+  | { kind: 'quadrilateral'; allSidesEqual: boolean; rightAngles: boolean; oppositeSidesParallel: boolean }
+  | { kind: 'exponentRule'; a: number; b: number; operation: 'multiply' | 'divide' | 'power' }
+  | { kind: 'triangleExterior'; a: number; b: number }
+  | { kind: 'missingMean'; known: number[]; meanNumerator: number; meanDenominator: number };
 
 export type Figure =
   | { kind: 'box'; length: number; width: number; height: number | null }
@@ -91,6 +98,7 @@ export interface Item {
   choices?: Choice[];
   key: string;
   solution: string;
+  variantId?: string;
 }
 
 export interface Draft {
@@ -101,6 +109,7 @@ export interface Draft {
   data: ProblemData;
   answer: Fraction | string;
   solution: string;
+  variantId?: string;
   distractors?: { value: Fraction; misconception: string }[];
   choices?: ChoiceDraft[];
 }
