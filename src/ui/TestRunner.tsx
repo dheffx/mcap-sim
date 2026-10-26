@@ -36,6 +36,7 @@ function Confirmation({ title, children, onCancel, onConfirm, confirmLabel, canc
 export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTest; preparation?: Preparation; onPrepare: PrepareTest }) {
   const { progress, setProgress, storageError, reset, blocked } = useProgress(test.code, test.items.length, preparation);
   const [view, setView] = useState<'question' | 'results'>(() => progress.submitted ? 'results' : 'question');
+  const [settingsOpen, setSettingsOpen] = useState(() => progress.startedAt === null && !progress.submitted);
   const [confirm, setConfirm] = useState<'submit' | 'reset' | null>(null);
   const [now, setNow] = useState(Date.now);
   const [copyStatus, setCopyStatus] = useState('');
@@ -103,6 +104,7 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
     const time = Date.now();
     setNow(time);
     setProgress(previous => beginAttempt(previous, time, durationMs));
+    setSettingsOpen(false);
     setView('question');
   }
 
@@ -143,10 +145,11 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
       <button className="icon-button" onClick={() => copy(`${window.location.href.split('#')[0]}${testHref(test.code)}`, 'Link')} aria-label="Copy test link" title="Copy test link"><Icon name="link" /></button>
       <span className="copy-status" role="status">{copyStatus}</span>
     </div>
-    <section className="panel setup-panel" aria-label="Test controls">
+    <details className="panel setup-panel" open={settingsOpen} onToggle={event => setSettingsOpen(event.currentTarget.open)}>
+      <summary>Test settings</summary>
       <TestSetup initialSeed={test.seed} initialAssessmentId={assessmentId} durationMs={progress.durationMs} onPrepare={onPrepare} onStart={ready ? start : undefined} active={!ready} />
       {ready && <p className="ready-details">{test.items.length} questions · {test.blueprint.totalPoints} points · no calculator. Start test begins the timer and reveals question 1.{answered > 0 && ` ${answered} saved answers will be retained.`}</p>}
-    </section>
+    </details>
 
     {!ready && (view === 'results' ? <>
       <div className="result-summary">
@@ -246,7 +249,7 @@ export function TestRunner({ test, preparation, onPrepare }: { test: GeneratedTe
       <p>Keep working to check more answers for practice. Your timed score and unanswered-at-time-limit count will not change.</p>
     </Confirmation> : confirm === 'submit' ? <Confirmation title="Finish test?" cancelLabel="Keep working" onCancel={() => setConfirm(null)} confirmLabel="Submit & see results" onConfirm={finish}>
       <p>{answered} of {test.items.length} questions answered. {expired ? 'The timed score uses answers saved at the time limit.' : 'Unanswered questions receive zero points.'} You cannot edit answers after submitting.</p>
-    </Confirmation> : confirm === 'reset' && <Confirmation title="Reset this attempt?" onCancel={() => setConfirm(null)} confirmLabel="Reset test" onConfirm={() => { if (reset()) { setView('question'); setNow(Date.now()); } setConfirm(null); }}>
+    </Confirmation> : confirm === 'reset' && <Confirmation title="Reset this attempt?" onCancel={() => setConfirm(null)} confirmLabel="Reset test" onConfirm={() => { if (reset()) { setView('question'); setSettingsOpen(true); setNow(Date.now()); } setConfirm(null); }}>
       <p>Saved answers, scores, and the timer for this code will be reset. Questions stay hidden until Start test is clicked.</p>
     </Confirmation>}
   </div>;

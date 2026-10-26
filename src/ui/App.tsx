@@ -8,7 +8,6 @@ import { testHref } from './routes';
 
 export function App() {
   const [hash, setHash] = useState(window.location.hash);
-  const [largeText, setLargeText] = useState(false);
   const [preparation, setPreparation] = useState<(Preparation & { code: string }) | undefined>();
   useEffect(() => {
     const update = () => setHash(window.location.hash);
@@ -23,9 +22,9 @@ export function App() {
     window.location.hash = testHref(code);
   }
 
-  return <div className={`app ${largeText ? 'large-text' : ''}`}>
+  return <div className="app">
     <a className="skip-link" href="#main-content" onClick={event => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>Skip to content</a>
-    <header className="site-header"><div className="wrap header-inner"><Brand /><nav aria-label="Main navigation"><a href="#/">Setup</a><button className="font-toggle" aria-pressed={largeText} aria-label={largeText ? 'Use standard text size' : 'Use larger text size'} onClick={() => setLargeText(value => !value)}>Text size</button></nav></div></header>
+    <header className="site-header"><div className="wrap header-inner"><Brand /><nav aria-label="Main navigation"><a href="https://github.com/dheffx/mcap-sim/blob/main/HOW_IT_WORKS.md" target="_blank" rel="noreferrer">How it works</a></nav></div></header>
     <main id="main-content" tabIndex={-1}>
       {route.kind === 'home' ? <Home onPrepare={prepareTest} /> : route.kind === 'error' ? <section className="wrap route-error"><h1>Could not open test</h1><p role="alert">{route.message}</p><a className="button primary" href="#/">Test setup</a></section> : <TestRunner key={`${route.test.code}:${preparation?.code === route.test.code ? preparation.id : ''}`} test={route.test} preparation={preparation?.code === route.test.code ? preparation : undefined} onPrepare={prepareTest} />}
     </main>

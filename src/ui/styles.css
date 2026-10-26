@@ -31,8 +31,6 @@ svg { flex-shrink: 0; vertical-align: middle; }
 .brand::before { content: ''; width: 5px; height: 17px; background: #4673d7; border-radius: 2px; }
 .header-inner nav { display: flex; align-items: center; gap: 20px; font-size: 12px; }
 .header-inner nav a { color: var(--muted); text-decoration: none; }
-.font-toggle { border: 0; background: none; padding: 5px 0; font-size: 12px; color: var(--muted); }
-.font-toggle[aria-pressed="true"] { color: var(--accent); text-decoration: underline; }
 .home { padding-top: 32px; max-width: 900px; }
 .muted { color: var(--muted); }
 .panel, .question-card { border: 1px solid var(--line); padding: 20px; border-radius: 4px; background: white; }
@@ -80,6 +78,9 @@ input::placeholder { color: #72777c; font-weight: 400; font-size: 13px; }
 .icon-button { border: 0; background: none; color: var(--muted); padding: 5px; }
 .icon-button svg { width: 14px; height: 14px; }
 .setup-panel { padding: 15px 18px; margin-bottom: 20px; background: #f0f5fe; border-color: #d4e0f5; }
+.setup-panel > summary { font-size: 12px; font-weight: 600; color: #315a9a; cursor: pointer; }
+.setup-panel[open] > summary { margin-bottom: 14px; }
+.setup-panel:not([open]) { padding-block: 10px; }
 .setup-panel .input-hint { font-size: 11px; }
 .test-layout { display: grid; grid-template-columns: minmax(0, 1fr) 235px; gap: 20px; align-items: start; }
 .question-card { padding: 24px; min-height: calc(100svh - 32px); scroll-margin-top: 16px; animation: question-enter 260ms ease-out; }
@@ -173,10 +174,6 @@ progress::-moz-progress-bar { background: #5e83cd; }
 .standard-tag { font-size: 11px; color: var(--muted); }
 .debug-panel { border: 1px dashed var(--line); padding: 15px; margin-top: 20px; font-size: 12px; }
 .debug-panel pre { overflow-x: auto; font-size: 11px; }
-.large-text .question-prompt { font-size: 23px; }
-.large-text .choice { font-size: 19px; }
-.large-text .numeric-input-row input { font-size: 20px; }
-.large-text .solution-box p, .large-text .numeric-entry .input-hint { font-size: 16px; }
 
 @media (max-width: 800px) {
   .wrap { width: calc(100% - 32px); }

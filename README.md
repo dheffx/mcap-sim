@@ -34,9 +34,9 @@ npm run coverage:blueprint
 - Grade 5 MSTAR-inspired practice reports content, modeling, and reasoning separately, including applied measurement, multistep costs, and misconception explanations.
 - Per-slot seeded RNG, independent option streams, exact BigInt rational math, a separate answer verifier, and immutable versioned share codes such as `BAYTRAIL.g5.p1.v1`.
 - Keyboard-operable question navigation, flags, browser-saved answers, resume, submission confirmation, domain-level raw scores, worked solutions, and misconception feedback.
-- A configurable timer (15-minute default). New random tests and submitted seeds reset the attempt and hide questions until **Start test**. Skipping and the question grid let you return to unanswered items.
+- A configurable timer (15-minute default). New random tests and submitted seeds reset the attempt and hide questions until **Start test**. Test settings are collapsible and close automatically when starting. Skipping and the question grid let you return to unanswered items.
 - At the time limit, a dialog offers **Quit & see results** or **Keep working**. The timed answer snapshot and unanswered-at-time-limit count are fixed; further answers get practice feedback without changing the final timed score.
-- Fraction/decimal-equivalent numeric answers (including negatives), mathematical and text answer choices, accessible SVG diagrams and scatter plots, locally bundled KaTeX/MathML, mobile layout, and larger question text.
+- Fraction/decimal-equivalent numeric answers (including negatives), mathematical and text answer choices, accessible SVG diagrams and scatter plots, locally bundled KaTeX/MathML, and a mobile layout.
 - Property tests, version-pinned golden hashes, a fuzz runner, coverage report, and CI on two Node versions.
 
 Append `?debug` **before** the hash to inspect assembly counts, for example `/?debug#/t/BAYTRAIL.g5.p1.v1`.
